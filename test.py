@@ -1,3 +1,6 @@
+import sys
+
+sys.dont_write_bytecode = True
 import akshare as ak
 from stock import Stock
 from stocklist import StockList
@@ -5,11 +8,17 @@ from stocklist import StockList
 code_geli = "000651"
 
 
-def func_test():
+def list_test():
+    # print(ak.stock_info_sh_name_code(symbol="主板A股").values[0])
+    # print(ak.stock_info_sz_name_code(symbol="A股列表").values[0])
+    # print(ak.stock_info_bj_name_code().values[0])
     l = StockList()
-    s = Stock(code_geli, "格力电器")
-    # print(s)
     print(l)
+
+
+def func_test():
+    s = Stock(code_geli, "格力电器")
+    print(s)
 
 
 def line_test():
@@ -23,4 +32,5 @@ def line_test():
 
 if __name__ == "__main__":
     # line_test()
-    func_test()
+    # func_test()
+    list_test()
