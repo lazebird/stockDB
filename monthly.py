@@ -33,6 +33,7 @@ def monthly_update(date: datetime.date = None, max=-1, interval=DefInterval):
         o = Stock(e["code"], e["name"], e["market"]).get_monthly(date)
         stock_update(lst, o)
         Logger().info(f"[{i+1}/{max}] updating {o}")
+        write_data(lst, "list.txt")  # incremental file save for a long period oper
         time.sleep(interval)  # reduce speed to avoid server block
     write_data(lst, "list.txt")
 
