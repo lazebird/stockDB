@@ -1,9 +1,12 @@
 import sys
 
+
 sys.dont_write_bytecode = True
 import datetime
 import time
 import akshare as ak
+from env import DefDateFmt
+from log import Logger
 
 
 class Stock:
@@ -14,18 +17,18 @@ class Stock:
     def get_monthly(self, date: datetime.date = None):
         indicator = self.indicator = Stock.get_indicator(self.code, date)
         if indicator == {}:  # too many reqs may fail?
-            print(f"try again for code {self.code}, name {self.name} 3s later")
+            Logger().info(f"try again for code {self.code}, name {self.name} 3s later")
             time.sleep(3)
             indicator = self.indicator = Stock.get_indicator(self.code, date)
 
-        indicator["trade_date"] = datetime.datetime.strftime(indicator.get("trade_date", datetime.date(1970, 1, 1)), "%Y/%m/%d")
+        indicator["trade_date"] = datetime.datetime.strftime(indicator.get("trade_date", datetime.date(1970, 1, 1)), DefDateFmt)
         return {"code": self.code, "name": self.name, "market": self.market, **indicator}
 
     def get_daily(self, start_date: datetime.date = datetime.date.today(), end_date: datetime.date = datetime.date.today()):
         hprice = self.hprice = Stock.get_hprice(self.code, start_date=start_date.strftime("%Y%m%d"), end_date=end_date.strftime("%Y%m%d")).to_dict()
         fund_flow = self.fund_flow = Stock.get_fund_flow(self.code, self.market, end_date)
-        print(f"hprice={hprice}")
-        print(f"fund_flow={fund_flow}")
+        Logger().info(f"hprice={hprice}")
+        Logger().info(f"fund_flow={fund_flow}")
         return {"code": self.code, "name": self.name, "market": self.market, **hprice, **fund_flow}
 
     def get_indicator(code, date: datetime.date = None):
@@ -35,7 +38,7 @@ class Stock:
             dt = ak.stock_a_indicator_lg(symbol=code)
             i = dt.iloc[-1].to_dict() if date == None else dt[dt["trade_date"] == date].iloc[-1].to_dict()
         except Exception as e:
-            print(f"Error: code {code}, date {date}, indicators {dt}, errmsg {e}")
+            Logger().info(f"Error: code {code}, date {date}, indicators {dt}, errmsg {e}")
         return i
 
     def get_hprice(code, start_date="20050501", end_date="20050520"):
@@ -51,4 +54,4 @@ class Stock:
 
 if __name__ == "__main__":
     s = Stock("000651", "格力电器", "sz")
-    print(s.get_monthly())
+    Logger().info(s.get_monthly())

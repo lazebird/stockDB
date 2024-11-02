@@ -5,6 +5,7 @@ import time
 import datetime
 from fs import load_data, write_data
 from stock import Stock
+from env import DefDateFmt, DefInterval
 
 
 def stock_update(lst: list, n):
@@ -15,12 +16,12 @@ def stock_update(lst: list, n):
     lst.sort(key=lambda x: x["code"])
 
 
-def daily_update(date: datetime.date = None, max=-1, interval=5):
+def daily_update(date: datetime.date = None, max=-1, interval=DefInterval):
     lst = load_data("list.txt", defval=[])
     for e in lst[:max]:
         print(e)
         s = Stock(e["code"], e["name"], e["market"])
-        date = datetime.datetime.strptime(e["trade_date"], "%Y/%m/%d").date()
+        date = datetime.datetime.strptime(e["trade_date"], DefDateFmt).date()
         o = s.get_daily(start_date=date, end_date=date)
         time.sleep(interval)  # reduce speed to avoid server block
         write_data(o, "{}/{}.txt".format(date.strftime("%Y%m%d"), s.code))
