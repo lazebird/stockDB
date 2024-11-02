@@ -1,3 +1,6 @@
+import sys
+
+sys.dont_write_bytecode = True
 import akshare as ak
 
 
@@ -6,6 +9,7 @@ class StockList:
         self.shlst = StockList.get_shlst()
         self.szlst = StockList.get_szlst()
         self.bjlst = StockList.get_bjlst()
+        self.lst = self.shlst + self.szlst + self.bjlst
 
     def get_shlst():
         return list(map(lambda d: {"code": d[0], "name": d[1], "market": "sh"}, ak.stock_info_sh_name_code(symbol="主板A股").values))
@@ -17,4 +21,11 @@ class StockList:
         return list(map(lambda d: {"code": d[0], "name": d[1], "market": "bj"}, ak.stock_info_bj_name_code().values))
 
     def __repr__(self) -> str:
-        return f"{{'sh': {self.shlst}, 'sz': {self.szlst}, 'bj': {self.bjlst}}}"
+        return f"{self.lst}"
+
+
+if __name__ == "__main__":
+    s = StockList()
+    print(s.shlst[:4])
+    print(s.szlst[:4])
+    print(s.bjlst[:4])

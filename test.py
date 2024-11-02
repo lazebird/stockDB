@@ -1,6 +1,8 @@
 import sys
 
 sys.dont_write_bytecode = True
+import datetime
+from fs import load_data, write_data
 import akshare as ak
 from stock import Stock
 from stocklist import StockList
@@ -16,9 +18,21 @@ def list_test():
     print(l)
 
 
+def stock_update(lst: list, n):
+    for i, s in enumerate(lst):
+        if s["code"] == n["code"]:
+            del lst[i]
+    lst.append(n)
+    lst.sort(key=lambda x: x["code"])
+
+
 def func_test():
-    s = Stock(code_geli, "格力电器")
-    print(s)
+    lst = load_data("list.txt", defval=[])
+    for e in StockList().lst:
+        s = Stock(e["code"], e["name"], e["market"])
+        o = s.get_monthly(datetime.date(2024, 11, 1))
+        stock_update(lst, o)
+    write_data(lst, "list.txt")
 
 
 def line_test():
@@ -32,5 +46,5 @@ def line_test():
 
 if __name__ == "__main__":
     # line_test()
-    # func_test()
-    list_test()
+    # list_test()
+    func_test()
