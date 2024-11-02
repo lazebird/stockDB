@@ -1,6 +1,7 @@
 import sys
 
 sys.dont_write_bytecode = True
+import time
 import datetime
 from fs import load_data, write_data
 from stock import Stock
@@ -21,6 +22,7 @@ def monthly_update(date: datetime.date = None):
         s = Stock(e["code"], e["name"], e["market"])
         o = s.get_monthly(date)
         stock_update(lst, o)
+        time.sleep(10)  # reduce speed to avoid server block
     write_data(lst, "list.txt")
 
 
