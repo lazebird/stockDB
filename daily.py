@@ -17,8 +17,8 @@ def stock_update(l: list, max, interval, date, force=False):
     for i, e in enumerate(l[:max]):
         s = Stock(e["code"], e["name"], e["market"])
         file = "{}/{}.txt".format(date.strftime("%Y%m%d"), s.code)
-        if not force and load_data(file, {}) == {}:
-            Logger().info(f"[{i+1}/{max}] stock {s.code} {s.name} {date} skipped, cause: already exists")
+        if not force and load_data(file, {}) != {}:
+            Logger().info(f"[{i+1}/{max}] stock {s.code} {s.name} {date} skipped, cause: {file} already exists")
             continue
         o = s.get_daily(start_date=date, end_date=date)
         time.sleep(interval)  # reduce speed to avoid server block
