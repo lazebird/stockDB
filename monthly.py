@@ -3,39 +3,37 @@ import sys
 sys.dont_write_bytecode = True
 import time
 import datetime
-from fs import load_data, write_data
+from fs import write_data
 from stock import Stock
 from stocklist import StockList
 from env import DefDateFmt, DefInterval
 from log import Logger
 
 
-def stock_update(lst: list, n):
-    (i, x) = next(((i, x) for i, x in enumerate(lst) if x["code"] == n["code"]), (None, None))
-    if i != None:
-        del lst[i]
-    lst.append(n)
-    lst.sort(key=lambda x: x["code"])
-
-
-def monthly_update(date: datetime.date = None, max=-1, interval=DefInterval):
-    lst: list = load_data("list.txt", defval=[])
-    nlst = StockList().lst
-    max = len(nlst) if max == -1 else max
-    today = datetime.date.today()
-    for i, e in enumerate(nlst[:max]):
-        local = next((x for x in lst if x["code"] == e["code"]), None)
+def stocklist_update(l: list, nl: list, file, max, date, today, interval):
+    for i, e in enumerate(l[:max]):
+        local = next((x for x in l if x["code"] == e["code"]), None)
         if local != None:
             lastdate = datetime.datetime.strptime(local["trade_date"], DefDateFmt).date()
             if lastdate + datetime.timedelta(days=30) > today:
                 Logger().info(f"stock {e['code']} {e['name']} skipped, cause: less than 30 days passed from last update {lastdate}")
                 continue
         o = Stock(e["code"], e["name"], e["market"]).get_monthly(date)
-        stock_update(lst, o)
+        StockList.update_stock(l, o)
         Logger().info(f"[{i+1}/{max}] updating {o}")
-        write_data(lst, "list.txt")  # incremental file save for a long period oper
+        write_data(l, file)  # incremental file save for a long period oper
         time.sleep(interval)  # reduce speed to avoid server block
-    write_data(lst, "list.txt")
+    write_data(l, file)
+
+
+def monthly_update(date: datetime.date = None, max=-1, interval=DefInterval):
+    l = StockList()
+    l.update()
+    max = len(l) if max == -1 else max
+    today = datetime.date.today()
+    stocklist_update(l.shlist, l.nshlist, "shlist.txt", max, date, today, interval)
+    stocklist_update(l.szlist, l.nszlist, "szlist.txt", max, date, today, interval)
+    stocklist_update(l.bjlist, l.nbjlist, "bjlist.txt", max, date, today, interval)
 
 
 if __name__ == "__main__":
