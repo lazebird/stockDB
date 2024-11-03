@@ -22,7 +22,7 @@ def stocklist_update(l: list, nl: list, file, max, date, today, interval):
         o = Stock(e["code"], e["name"], e["market"]).get_monthly(date)
         StockList.update_stock(l, o)
         Logger().info(f"[{i+1}/{max}] updating {o}")
-        write_data(l, file)  # incremental file save for a long period oper
+        (i & 31 == 31) and write_data(l, file)  # incremental file save for a long period oper
         time.sleep(interval)  # reduce speed to avoid server block
     write_data(l, file)
 
