@@ -1,4 +1,4 @@
-name: Auto_Grab_stock_data
+name: daily_grab
 
 on:
   schedule:
