@@ -17,7 +17,7 @@ class Stock:
     def get_monthly(self, date: datetime.date = None):
         indicator = self.indicator = Stock.get_indicator(self.code, date)
         if indicator == {}:  # too many reqs may fail?
-            Logger().info(f"try again for code {self.code}, name {self.name} 3s later")
+            Logger().err(f"try again for code {self.code}, name {self.name} 3s later")
             time.sleep(3)
             indicator = self.indicator = Stock.get_indicator(self.code, date)
 
@@ -37,13 +37,13 @@ class Stock:
             dt = ak.stock_a_indicator_lg(symbol=code)
             i = dt.iloc[-1].to_dict() if date == None else dt[dt["trade_date"] == date].iloc[-1].to_dict()
         except Exception as e:
-            Logger().info(f"Error: code {code}, date {date}, indicators {dt}, errmsg {e}")
+            Logger().err(f"Error: code {code}, date {date}, indicators {dt}, errmsg {e}")
         return i
 
     def get_hprice(code, start_date="20050501", end_date="20050520"):
         dt = ak.stock_zh_a_hist(symbol=code, period="daily", start_date=start_date, end_date=end_date, adjust="qfq")
         if dt.empty:
-            Logger().info(f"code {code}, start_date {start_date}, end_date {end_date}, dt.empty {dt.empty}")
+            Logger().err(f"code {code}, start_date {start_date}, end_date {end_date}, dt.empty {dt.empty}")
             return {}
         return dt.iloc[-1].to_dict()
 
@@ -51,7 +51,7 @@ class Stock:
         dt = ak.stock_individual_fund_flow(stock=code, market=market)
         dt = dt if date == None else dt[dt["日期"] == date]
         if dt.empty:
-            Logger().info(f"code {code}, date {date}, dt.empty {dt.empty}")
+            Logger().err(f"code {code}, date {date}, dt.empty {dt.empty}")
             return {}
         return dt.iloc[-1].to_dict()
 

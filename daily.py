@@ -29,7 +29,7 @@ def stock_update(l: list, max, interval, date, force=False):
 def daily_update(date: datetime.date = None, max=-1, interval=DefInterval, force=False):
     date = datetime.date.today() if date == None else date
     if date.weekday() > 4:
-        Logger().info(f"no daily data in weekday {date.weekday()}")
+        Logger().err(f"no daily data in weekday {date.weekday()}, date {date}")
         return
     l = StockList()
     stock_update(l.shlist, max, interval, date, force=force)
@@ -56,6 +56,7 @@ def arg_parse():
 
 
 if __name__ == "__main__":
+    Logger("output/daily.log").set_level(7).clear()
     (number, date, long, interval, force) = arg_parse()
     date = datetime.datetime.strptime(date, DefDateFmt).date()
     his_update(end_date=date, days=long, max=number, interval=interval, force=force)

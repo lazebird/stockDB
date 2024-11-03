@@ -37,5 +37,6 @@ def monthly_update(date: datetime.date = None, max=-1, interval=DefInterval):
 
 
 if __name__ == "__main__":
+    Logger("output/monthly.log").set_level(7).clear()
     max = 4 if len(sys.argv) > 1 else -1
     monthly_update(max=max)
