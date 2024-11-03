@@ -11,12 +11,13 @@ from log import Logger
 
 
 def stocklist_update(l: list, nl: list, file, max, date, today, interval):
+    max = len(l) if max == -1 else max
     for i, e in enumerate(l[:max]):
         local = next((x for x in l if x["code"] == e["code"]), None)
         if local != None:
             lastdate = datetime.datetime.strptime(local["trade_date"], DefDateFmt).date()
             if lastdate + datetime.timedelta(days=30) > today:
-                Logger().info(f"stock {e['code']} {e['name']} skipped, cause: less than 30 days passed from last update {lastdate}")
+                Logger().info(f"[{i+1}/{max}] stock {e['code']} {e['name']} skipped, cause: less than 30 days passed from last update {lastdate}")
                 continue
         o = Stock(e["code"], e["name"], e["market"]).get_monthly(date)
         StockList.update_stock(l, o)
@@ -29,7 +30,6 @@ def stocklist_update(l: list, nl: list, file, max, date, today, interval):
 def monthly_update(date: datetime.date = None, max=-1, interval=DefInterval):
     l = StockList()
     l.update()
-    max = len(l) if max == -1 else max
     today = datetime.date.today()
     stocklist_update(l.shlist, l.nshlist, "shlist.txt", max, date, today, interval)
     stocklist_update(l.szlist, l.nszlist, "szlist.txt", max, date, today, interval)
