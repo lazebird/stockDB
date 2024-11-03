@@ -1,32 +1,60 @@
 import sys
 
+
 sys.dont_write_bytecode = True
 import time
+import argparse
 import datetime
 from fs import load_data, write_data
 from stock import Stock
-from env import DefDateFmt, DefInterval
+from env import DefInterval, DefDateFmt
+from stocklist import StockList
+from log import Logger
 
 
-def stock_update(lst: list, n):
-    for i, s in enumerate(lst):
-        if s["code"] == n["code"]:
-            del lst[i]
-    lst.append(n)
-    lst.sort(key=lambda x: x["code"])
-
-
-def daily_update(date: datetime.date = None, max=-1, interval=DefInterval):
-    lst = load_data("list.txt", defval=[])
-    for e in lst[:max]:
-        print(e)
+def stock_update(l: list, max, interval, date, force=False):
+    max = len(l) if max == -1 else max
+    for i, e in enumerate(l[:max]):
         s = Stock(e["code"], e["name"], e["market"])
-        date = datetime.datetime.strptime(e["trade_date"], DefDateFmt).date()
+        file = "{}/{}.txt".format(date.strftime("%Y%m%d"), s.code)
+        if not force and load_data(file, {}) == {}:
+            Logger().info(f"[{i+1}/{max}] stock {s.code} {s.name} {date} skipped, cause: already exists")
+            continue
         o = s.get_daily(start_date=date, end_date=date)
         time.sleep(interval)  # reduce speed to avoid server block
-        write_data(o, "{}/{}.txt".format(date.strftime("%Y%m%d"), s.code))
+        write_data(o, file)
+        Logger().info(f"[{i+1}/{max}] updating {o}")
+
+
+def daily_update(date: datetime.date = None, max=-1, interval=DefInterval, force=False):
+    date = datetime.date.today() if date == None else date
+    if date.weekday() > 4:
+        Logger().info(f"no daily data in weekday {date.weekday()}")
+        return
+    l = StockList()
+    stock_update(l.shlist, max, interval, date, force=force)
+    stock_update(l.szlist, max, interval, date, force=force)
+    stock_update(l.bjlist, max, interval, date, force=force)
+
+
+def his_update(end_date=datetime.date.today(), days=30, max=-1, interval=DefInterval, force=False):
+    for i in range(days):
+        date = end_date - datetime.timedelta(days=i)
+        daily_update(date=date, max=max, interval=interval, force=force)
+
+
+def arg_parse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--date", default=datetime.date.today().strftime(DefDateFmt), help="end date")
+    parser.add_argument("-n", "--number", type=int, default=-1, help="stock number")
+    parser.add_argument("-l", "--long", type=int, default=1, help="days for history data")
+    parser.add_argument("-i", "--interval", type=int, default=DefInterval, help="API call interval")
+    parser.add_argument("-f", "--force", action="store_true", help="force to update, even if exists")
+    args = parser.parse_args()
+    return (args.number, args.date, args.long, args.interval, args.force)
 
 
 if __name__ == "__main__":
-    max = 4 if len(sys.argv) > 1 else -1
-    daily_update(max=max)
+    (number, date, long, interval, force) = arg_parse()
+    date = datetime.datetime.strptime(date, DefDateFmt).date()
+    his_update(end_date=date, days=long, max=number, interval=interval, force=force)
