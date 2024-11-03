@@ -1,4 +1,4 @@
-name: history_grab # manual grab 30 days's daily data
+name: history_grab4 # manual grab 30 days's daily data
 
 on:
   workflow_dispatch:
