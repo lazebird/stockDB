@@ -51,6 +51,7 @@ def arg_parse():
     parser.add_argument("-i", "--interval", type=int, default=DefInterval, help="API call interval")
     parser.add_argument("-f", "--force", action="store_true", help="force to update, even if exists")
     args = parser.parse_args()
+    Logger().info(f"args: {args}")
     return (args.number, args.date, args.long, args.interval, args.force)
 
 
