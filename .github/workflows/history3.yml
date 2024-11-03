@@ -1,4 +1,4 @@
-name: history_grab # manual grab last 100 days's daily data
+name: history_grab # manual grab 30 days's daily data
 
 on:
   workflow_dispatch:
@@ -28,7 +28,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Python script
-        run: python daily.py -l 100
+        run: python daily.py -l 30 -d 2024/9/05
 
       - name: compress and clean data directory
         run: python clean.py
