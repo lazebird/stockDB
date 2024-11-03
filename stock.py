@@ -41,11 +41,19 @@ class Stock:
         return i
 
     def get_hprice(code, start_date="20050501", end_date="20050520"):
-        return ak.stock_zh_a_hist(symbol=code, period="daily", start_date=start_date, end_date=end_date, adjust="qfq").iloc[-1].to_dict()
+        dt = ak.stock_zh_a_hist(symbol=code, period="daily", start_date=start_date, end_date=end_date, adjust="qfq")
+        if dt.empty:
+            Logger().info(f"code {code}, start_date {start_date}, end_date {end_date}, dt.empty {dt.empty}")
+            return {}
+        return dt.iloc[-1].to_dict()
 
     def get_fund_flow(code, market, date):
         dt = ak.stock_individual_fund_flow(stock=code, market=market)
-        return dt.iloc[-1].to_dict() if date == None else dt[dt["日期"] == date].iloc[-1].to_dict()
+        dt = dt if date == None else dt[dt["日期"] == date]
+        if dt.empty:
+            Logger().info(f"code {code}, date {date}, dt.empty {dt.empty}")
+            return {}
+        return dt.iloc[-1].to_dict()
 
     def __repr__(self) -> str:
         return f"{{{self.code, self.name, self.indicator, self.hprice, self.fund_flow}}}"
