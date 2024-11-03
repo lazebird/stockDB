@@ -22,3 +22,7 @@ def load_data(rpath, defval={}):
         with open(apath, "r", encoding="utf8") as f:
             return json.load(f)
     return defval
+
+
+def get_datadir(datestr):
+    return os.path.join(DataDir, datestr)

@@ -1,3 +1,4 @@
+import os
 import sys
 
 
@@ -5,7 +6,7 @@ sys.dont_write_bytecode = True
 import time
 import argparse
 import datetime
-from fs import load_data, write_data
+from fs import get_datadir, load_data, write_data
 from stock import Stock
 from env import DefInterval, DefDateFmt
 from stocklist import StockList
@@ -43,6 +44,16 @@ def his_update(end_date=datetime.date.today(), days=30, max=-1, interval=DefInte
         daily_update(date=date, max=max, interval=interval, force=force)
 
 
+def his_more(end_date=datetime.date.today(), max=-1, interval=DefInterval, force=False):
+    for i in range(365):
+        date = end_date - datetime.timedelta(days=i)
+        dir = get_datadir(date.strftime("%Y%m%d"))
+        if os.path.isdir(dir) or date.weekday() > 4:
+            continue
+        daily_update(date=date, max=max, interval=interval, force=force)
+        break
+
+
 def arg_parse():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--date", default=datetime.date.today().strftime(DefDateFmt), help="end date")
@@ -50,13 +61,15 @@ def arg_parse():
     parser.add_argument("-l", "--long", type=int, default=1, help="days for history data")
     parser.add_argument("-i", "--interval", type=int, default=DefInterval, help="API call interval")
     parser.add_argument("-f", "--force", action="store_true", help="force to update, even if exists")
+    parser.add_argument("-m", "--more", action="store_true", help="one more days's daily data, not exists now, not older than 365 days ago")
     args = parser.parse_args()
     Logger().info(f"args: {args}")
-    return (args.number, args.date, args.long, args.interval, args.force)
+    return (args.number, args.date, args.long, args.interval, args.force, args.more)
 
 
 if __name__ == "__main__":
     Logger("output/daily.log").set_level(7).clear()
-    (number, date, long, interval, force) = arg_parse()
+    (number, date, long, interval, force, more) = arg_parse()
     date = datetime.datetime.strptime(date, DefDateFmt).date()
-    his_update(end_date=date, days=long, max=number, interval=interval, force=force)
+    more and his_more(max=number, interval=interval, force=force)
+    more or his_update(end_date=date, days=long, max=number, interval=interval, force=force)

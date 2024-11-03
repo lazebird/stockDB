@@ -1,4 +1,4 @@
-name: history_grab4 # manual grab 30 days's daily data
+name: 1moreday # manual grab 1 more day's daily data
 
 on:
   workflow_dispatch:
@@ -28,7 +28,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Python script
-        run: python daily.py -l 30 -d 2024/8/06
+        run: python daily.py -m
 
       - name: compress and clean data directory
         run: python clean.py
@@ -40,7 +40,6 @@ jobs:
           git add data/
           if [ -n "$(git status --porcelain)" ]; then
             git commit -m "Update data files"
-            git pull --rebase
             git push
           else
             echo "No changes to commit"
