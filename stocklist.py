@@ -14,13 +14,13 @@ class StockList:
         (self.nshlist, self.nszlist, self.nbjlist) = (StockList.get_shlist(), StockList.get_szlist(), StockList.get_bjlist())
 
     def get_shlist():
-        return list(map(lambda d: {"code": d[0], "name": d[1], "market": "sh"}, ak.stock_info_sh_name_code(symbol="主板A股").values))
+        return list(map(lambda d: {"code": d[0], "name": d[1], "market": "sh", "rdate": d[3]}, ak.stock_info_sh_name_code(symbol="主板A股").values))
 
     def get_szlist():
-        return list(map(lambda d: {"code": d[1], "name": d[2], "market": "sz"}, ak.stock_info_sz_name_code(symbol="A股列表").values))
+        return list(map(lambda d: {"code": d[1], "name": d[2], "market": "sz", "rdate": d[3]}, ak.stock_info_sz_name_code(symbol="A股列表").values))
 
     def get_bjlist():
-        return list(map(lambda d: {"code": d[0], "name": d[1], "market": "bj"}, ak.stock_info_bj_name_code().values))
+        return list(map(lambda d: {"code": d[0], "name": d[1], "market": "bj", "rdate": d[4]}, ak.stock_info_bj_name_code().values))
 
     def update_stock(l: list, n):
         (i, x) = next(((i, x) for i, x in enumerate(l) if x["code"] == n["code"]), (None, None))
@@ -30,11 +30,11 @@ class StockList:
         l.sort(key=lambda x: x["code"])
 
     def __repr__(self) -> str:
-        return f"{self.lst}"
+        return f"{self.shlist+self.szlist+self.bjlist}"
 
 
 if __name__ == "__main__":
     s = StockList()
-    print(s.shlst[:4])
-    print(s.szlst[:4])
-    print(s.bjlst[:4])
+    print(s.shlist[:4])
+    print(s.szlist[:4])
+    print(s.bjlist[:4])

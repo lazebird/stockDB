@@ -11,12 +11,16 @@ from stock import Stock
 from env import DefInterval, DefDateFmt
 from stocklist import StockList
 from log import Logger
+from tradedate import TradeDate
 
 
-def stock_update(l: list, max, interval, date, force=False):
-    max = len(l) if max == -1 else max
-    for i, e in enumerate(l[:max]):
-        s = Stock(e["code"], e["name"], e["market"])
+def stock_update(tradedate: TradeDate, l: list, interval, date: datetime.date, force=False):
+    max = len(l)
+    for i, e in enumerate(l):
+        s = Stock(e["code"], e["name"], e["market"], e["rdate"])
+        if not tradedate.stock_check(s, date):
+            Logger().err(f"stock {s.code} {s.name} skipped, cause: not trade in {date}")
+            continue
         file = "{}/{}.txt".format(date.strftime("%Y%m%d"), s.code)
         if not force and load_data(file, {}) != {}:
             Logger().info(f"[{i+1}/{max}] stock {s.code} {s.name} {date} skipped, cause: {file} already exists")
@@ -27,30 +31,30 @@ def stock_update(l: list, max, interval, date, force=False):
         Logger().info(f"[{i+1}/{max}] updating {o}")
 
 
-def daily_update(date: datetime.date = None, max=-1, interval=DefInterval, force=False):
+def daily_update(tradedate: TradeDate, date: datetime.date = None, max=-1, interval=DefInterval, force=False):
     date = datetime.date.today() if date == None else date
-    if date.weekday() > 4:
-        Logger().err(f"no daily data in weekday {date.weekday()}, date {date}")
-        return
+    if not tradedate.date_check(date):
+        return False
     l = StockList()
-    stock_update(l.shlist, max, interval, date, force=force)
-    stock_update(l.szlist, max, interval, date, force=force)
-    stock_update(l.bjlist, max, interval, date, force=force)
+    stock_update(tradedate, l.shlist[:max], interval, date, force=force)
+    stock_update(tradedate, l.szlist[:max], interval, date, force=force)
+    stock_update(tradedate, l.bjlist[:max], interval, date, force=force)
+    return True
 
 
-def his_update(end_date=datetime.date.today(), days=30, max=-1, interval=DefInterval, force=False):
+def his_update(tradedate, end_date=datetime.date.today(), days=30, max=-1, interval=DefInterval, force=False):
     for i in range(days):
         date = end_date - datetime.timedelta(days=i)
-        daily_update(date=date, max=max, interval=interval, force=force)
+        daily_update(tradedate, date=date, max=max, interval=interval, force=force)
 
 
-def his_more(end_date=datetime.date.today(), max=-1, interval=DefInterval, force=False):
+def his_more(tradedate: TradeDate, end_date=datetime.date.today(), max=-1, interval=DefInterval, force=False):
     for i in range(365):
         date = end_date - datetime.timedelta(days=i)
         dir = get_datadir(date.strftime("%Y%m%d"))
-        if os.path.isdir(dir) or date.weekday() > 4:
+        if os.path.isdir(dir) or not tradedate.date_check(date):
             continue
-        daily_update(date=date, max=max, interval=interval, force=force)
+        daily_update(tradedate, date=date, max=max, interval=interval, force=force)
         break
 
 
@@ -71,5 +75,6 @@ if __name__ == "__main__":
     Logger("output/daily.log").set_level(7).clear()
     (number, date, long, interval, force, more) = arg_parse()
     date = datetime.datetime.strptime(date, DefDateFmt).date()
-    more and his_more(max=number, interval=interval, force=force)
-    more or his_update(end_date=date, days=long, max=number, interval=interval, force=force)
+    tradedate = TradeDate()
+    more and his_more(tradedate, max=number, interval=interval, force=force)
+    more or his_update(tradedate, end_date=date, days=long, max=number, interval=interval, force=force)

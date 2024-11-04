@@ -1,2 +1,3 @@
 DefDateFmt = "%Y/%m/%d"
-DefInterval = 3
+DefRDateFmt = "%Y-%m-%d"
+DefInterval = 1

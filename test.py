@@ -29,7 +29,7 @@ def stock_update(lst: list, n):
 def func_test():
     lst = load_data("list.txt", defval=[])
     for e in StockList().lst:
-        s = Stock(e["code"], e["name"], e["market"])
+        s = Stock(e["code"], e["name"], e["market"], e["rdate"])
         o = s.get_monthly(datetime.date(2024, 11, 1))
         stock_update(lst, o)
     write_data(lst, "list.txt")

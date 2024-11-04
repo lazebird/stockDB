@@ -5,13 +5,14 @@ sys.dont_write_bytecode = True
 import datetime
 import time
 import akshare as ak
-from env import DefDateFmt
+from env import DefDateFmt, DefRDateFmt
 from log import Logger
 
 
 class Stock:
-    def __init__(self, code, name, market):
+    def __init__(self, code, name, market, rdate):
         (self.code, self.name, self.market) = (code, name, market)
+        self.rdate = datetime.datetime.strptime(rdate, DefRDateFmt).date() if isinstance(rdate, str) else rdate
         self.indicator = self.hprice = self.fund_flow = None  # init for __repr__
 
     def get_monthly(self, date: datetime.date = None):
@@ -22,9 +23,12 @@ class Stock:
             indicator = self.indicator = Stock.get_indicator(self.code, date)
 
         indicator["trade_date"] = datetime.datetime.strftime(indicator.get("trade_date", datetime.date(1970, 1, 1)), DefDateFmt)
-        return {"code": self.code, "name": self.name, "market": self.market, **indicator}
+        return {"code": self.code, "name": self.name, "market": self.market, "rdate": datetime.datetime.strftime(self.rdate, DefRDateFmt), **indicator}
 
     def get_daily(self, start_date: datetime.date = datetime.date.today(), end_date: datetime.date = datetime.date.today()):
+        if end_date < self.rdate:
+            return {}
+        start_date = self.rdate if start_date > self.rdate else start_date
         hprice = self.hprice = Stock.get_hprice(self.code, start_date=start_date.strftime("%Y%m%d"), end_date=end_date.strftime("%Y%m%d"))
         fund_flow = self.fund_flow = Stock.get_fund_flow(self.code, self.market, end_date)
         fund_flow["日期"] = datetime.datetime.strftime(fund_flow.get("日期", datetime.date(1970, 1, 1)), DefDateFmt)
@@ -60,5 +64,5 @@ class Stock:
 
 
 if __name__ == "__main__":
-    s = Stock("000651", "格力电器", "sz")
+    s = Stock("000651", "格力电器", "sz", "1996-11-18")
     Logger().info(s.get_monthly())
