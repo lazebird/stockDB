@@ -2,7 +2,7 @@ name: daily_grab
 
 on:
   schedule:
-    - cron: "20 7,10 * * 1-5" # UTC时间的07:20，相当于北京时间的15:20
+    - cron: "20 7,14 * * 1-5" # UTC时间的07:20，相当于北京时间的15:20
   workflow_dispatch:
 
 jobs:
