@@ -2,10 +2,14 @@ import sys
 
 
 sys.dont_write_bytecode = True
+import datetime
+import os
 import argparse
-from fs import load_data, write_data
+from fs import load_data, write_xlsx, write_data, DataDir
 from log import Logger
 from stocklist import StockList
+from tradedate import TradeDate
+from env import DefDateFmt
 
 
 def split_stocklist():
@@ -28,25 +32,124 @@ def stock_stat(pe, pe_ttm):
     Logger().info(f"bjlist: {len(l.bjlist)}, pe<{pe}, pe_ttm<{pe_ttm}: {len(list(filter(lambda x:x['pe_ttm']<pe_ttm and x['pe']<pe, l.bjlist)))}")
 
 
+def stocklist_xlsx(force):
+    file = "output/列表.xlsx"
+    if not force and os.path.isfile(file):
+        Logger().info(f"{file} write skipped, cause: already exists")
+        return
+    l = StockList()
+    l = l.shlist + l.szlist + l.bjlist
+    l.sort(key=lambda x: x["code"])
+    write_xlsx(l, file)
+
+
+def load_hisdirs():
+    return list(map(lambda x: x.name, filter(lambda e: e.is_dir(), os.scandir(DataDir))))
+
+
+def load_stock_hisdata(code, dirs: list[str]):
+    datas = []
+    for d in dirs:
+        data = load_data(f"{d}/{code}.txt")
+        data.pop("股票代码", 0)  # fix data attrs
+        data != {} and datas.append(data)
+    datas.sort(key=lambda x: x["日期"])
+    return datas
+
+
+def set_fund(e, name, suffixs: list, datas: list):
+    if len(suffixs) != len(datas):
+        Logger().err(f"stock {e['code']} {e['name']} suffixs len {len(suffixs)} and datas len {len(datas)} mismatch")
+    lens = list(set(list(map(lambda d: len(d), datas))))  # data len should not be equal, remove duplicate len datas
+    if len(lens) != len(datas):
+        Logger().info(f"stock {e['code']} {e['name']} datas(len {len(datas)}) are not unique(unique len {len(lens)}), remove duplicated data")
+    for i in range(len(lens)):  # use data len for data not enough case
+        e[f"{name}-{suffixs[i]}"] = sum(list(map(lambda x: x[name], datas[i])))
+
+
+def stock_x_xlsx(force):
+    file = "output/X列表.xlsx"
+    if not force and os.path.isfile(file):
+        Logger().info(f"{file} write skipped, cause: already exists")
+        return
+    l = StockList()
+    l = l.shlist + l.szlist + l.bjlist
+    l.sort(key=lambda x: x["code"])
+    dirs = load_hisdirs()
+    tradedate = TradeDate()
+    today = datetime.date.today()
+    latest_tradedate = next(filter(lambda d: d >= today, tradedate.dlist))
+    d5_ago = tradedate.dlist[tradedate.dlist.index(latest_tradedate) - 4]  # maybe overflow?
+    d10_ago = tradedate.dlist[tradedate.dlist.index(latest_tradedate) - 9]  # maybe overflow?
+    m1_ago = next(filter(lambda d: d >= (today - datetime.timedelta(days=30)), tradedate.dlist))
+    m3_ago = next(filter(lambda d: d >= (today - datetime.timedelta(days=90)), tradedate.dlist))
+    m6_ago = next(filter(lambda d: d >= (today - datetime.timedelta(days=180)), tradedate.dlist))
+    y1_ago = next(filter(lambda d: d >= (today - datetime.timedelta(days=365)), tradedate.dlist))
+    Logger().dbg(f"latest_tradedate {latest_tradedate}, d5_ago {d5_ago}, d10_ago {d10_ago}, m1_ago {m1_ago}, m3_ago {m3_ago}, m6_ago {m6_ago}, y1_ago {y1_ago}")
+    for i, e in enumerate(l):
+        # s = Stock(e["code"], e["name"], e["market"], e["rdate"])
+        datas = load_stock_hisdata(e["code"], dirs)
+        datas_5d = list(filter(lambda x: datetime.datetime.strptime(x["日期"], DefDateFmt).date() > d5_ago, datas))
+        datas_10d = list(filter(lambda x: datetime.datetime.strptime(x["日期"], DefDateFmt).date() > d10_ago, datas))
+        datas_1m = list(filter(lambda x: datetime.datetime.strptime(x["日期"], DefDateFmt).date() > m1_ago, datas))
+        datas_3m = list(filter(lambda x: datetime.datetime.strptime(x["日期"], DefDateFmt).date() > m3_ago, datas))
+        datas_6m = list(filter(lambda x: datetime.datetime.strptime(x["日期"], DefDateFmt).date() > m6_ago, datas))
+        datas_1y = list(filter(lambda x: datetime.datetime.strptime(x["日期"], DefDateFmt).date() > y1_ago, datas))
+        # calc price by latest, highest in 1y, lowest in 1y
+        e["latest_price"] = datas[-1]["收盘"]
+        e["highest_price_1y"] = max(list(map(lambda x: (x["最高"]), datas_1y)))
+        e["lowest_price_1y"] = min(list(map(lambda x: (x["最低"]), datas_1y)))
+        # calc fund flow by 5d 10d 1m 3m 6m 1y
+        set_fund(e, "主力净流入-净额", ["5日", "10日", "1月", "3月", "6月", "1年"], [datas_5d, datas_10d, datas_1m, datas_3m, datas_6m, datas_1y])
+        set_fund(e, "超大单净流入-净额", ["5日", "10日", "1月", "3月", "6月", "1年"], [datas_5d, datas_10d, datas_1m, datas_3m, datas_6m, datas_1y])
+        set_fund(e, "大单净流入-净额", ["5日", "10日", "1月", "3月", "6月", "1年"], [datas_5d, datas_10d, datas_1m, datas_3m, datas_6m, datas_1y])
+        set_fund(e, "中单净流入-净额", ["5日", "10日", "1月", "3月", "6月", "1年"], [datas_5d, datas_10d, datas_1m, datas_3m, datas_6m, datas_1y])
+        set_fund(e, "小单净流入-净额", ["5日", "10日", "1月", "3月", "6月", "1年"], [datas_5d, datas_10d, datas_1m, datas_3m, datas_6m, datas_1y])
+
+    write_xlsx(l, file)
+
+
+def stock_xlsx(name, force=False):
+    l = StockList()
+    l = list(filter(lambda x: str(x).find(name) != -1, l.shlist + l.szlist + l.bjlist))
+    Logger().info(f"matched stocks: {list(map(lambda x:x['name'], l))}")
+    dirs = load_hisdirs()
+    for s in l:
+        file = f"output/{s['name']}.xlsx"
+        if not force and os.path.isfile(file):
+            Logger().info(f"{file} write skipped, cause: already exists")
+            continue
+        datas = load_stock_hisdata(s["code"], dirs)
+        write_xlsx(datas, file)
+
+
 def arg_parse():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--mode", default="stat", help="split, stat")
-    parser.add_argument("-p", "--pe", type=int, default=50, help="pe value")
-    parser.add_argument("-t", "--pe_ttm", type=int, default=50, help="pe_ttm value")
-    parser.add_argument("-s", "--force", action="store_true", help="force to update, even if exists")
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("-m", "--mode", default="xlsx", help="split, stat, xlsx(default)")
+    parser.add_argument("-p", "--pe", type=int, default=50, help="pe value, used in stat mode")
+    parser.add_argument("-t", "--pe_ttm", type=int, default=50, help="pe_ttm value, used in stat mode")
+    parser.add_argument(
+        "-n",
+        "--names",
+        default=None,
+        nargs="+",
+        help="""stock name pattern, used in xlsx mode. Examples: 
+            'python tools.py -m xlsx 格力 美的' will get stocks's history datas that match with given pattern.
+            'python tools.py -m xlsx' will get a list include all stocks""",
+    )
+    parser.add_argument("-f", "--force", action="store_true", help="force to update, even if exists")
     args = parser.parse_args()
     Logger().info(f"args: {args}")
-    return (args.mode, args.pe, args.pe_ttm, args.force)
+    return (args.mode, args.pe, args.pe_ttm, args.names, args.force)
 
 
 if __name__ == "__main__":
-    (mode, pe, pe_ttm, force) = arg_parse()
+    Logger().set_level(7).clear()
+    (mode, pe, pe_ttm, names, force) = arg_parse()
     match mode:
         case "split":
             split_stocklist()
         case "stat":
             stock_stat(pe, pe_ttm)
-
-# [2024-11-03 16:30:39][Info][tools.py:25] shlist: 1690, pe_ttm<50: 1000
-# [2024-11-03 16:30:39][Info][tools.py:26] szlist: 2840, pe_ttm<50: 1274
-# [2024-11-03 16:30:39][Info][tools.py:27] bjlist: 256, pe_ttm<50: 135
+        case "xls" | "xlsx":
+            stock_x_xlsx(force) if names == None else list(filter(lambda n: stock_xlsx(n, force), names))

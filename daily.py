@@ -72,7 +72,7 @@ def arg_parse():
 
 
 if __name__ == "__main__":
-    Logger("output/daily.log").set_level(7).clear()
+    Logger().set_level(7).clear()
     (number, date, long, interval, force, more) = arg_parse()
     date = datetime.datetime.strptime(date, DefDateFmt).date()
     tradedate = TradeDate()

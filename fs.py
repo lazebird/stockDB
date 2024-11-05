@@ -1,5 +1,6 @@
 import json
 import os
+import pandas as pd
 
 DataDir = os.path.join(".", "data/")
 
@@ -26,3 +27,19 @@ def load_data(rpath, defval={}):
 
 def get_datadir(datestr):
     return os.path.join(DataDir, datestr)
+
+
+def write_csv(d: list[dict], apath):
+    dir = os.path.dirname(apath)
+    os.makedirs(dir, exist_ok=True)
+    with open(apath, "w", encoding="utf8") as f:
+        print(", ".join(d[0].keys()), file=f)
+        for e in d:
+            print(", ".join(map(lambda x: str(x), e.values())), file=f)
+
+
+def write_xlsx(d: list[dict], apath):
+    dir = os.path.dirname(apath)
+    os.makedirs(dir, exist_ok=True)
+    pf = pd.DataFrame(d)
+    pf.to_excel(apath, sheet_name="data", freeze_panes=[1, 0])

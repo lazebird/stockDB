@@ -32,7 +32,9 @@ class Stock:
         hprice = self.hprice = Stock.get_hprice(self.code, start_date=start_date.strftime("%Y%m%d"), end_date=end_date.strftime("%Y%m%d"))
         fund_flow = self.fund_flow = Stock.get_fund_flow(self.code, self.market, end_date)
         fund_flow["日期"] = datetime.datetime.strftime(fund_flow.get("日期", datetime.date(1970, 1, 1)), DefDateFmt)
-        return {"code": self.code, "name": self.name, "market": self.market, **hprice, **fund_flow}
+        res = {"code": self.code, "name": self.name, "market": self.market, **hprice, **fund_flow}
+        res.pop("股票代码", 0)  # duplicate with code
+        return res
 
     def get_indicator(code, date: datetime.date = None):
         i = {}

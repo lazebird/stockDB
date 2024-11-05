@@ -1,6 +1,8 @@
 name: 1moreday # manual grab 1 more day's daily data
 
 on:
+  schedule:
+    - cron: "20 21 * * *" # UTC时间的21:20，相当于北京时间的5:20
   workflow_dispatch:
 
 jobs:
@@ -28,7 +30,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Python script
-        run: python daily.py -m
+        run: python daily.py -m -d 2024/11/01
 
       - name: compress and clean data directory
         run: python clean.py

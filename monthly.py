@@ -49,6 +49,6 @@ def arg_parse():
 
 
 if __name__ == "__main__":
-    Logger("output/monthly.log").set_level(7).clear()
+    Logger().set_level(7).clear()
     (number, date, interval, force) = arg_parse()
     monthly_update(date=date, max=number, interval=interval, force=force)
