@@ -105,6 +105,7 @@ def stock_x_xlsx(force):
         set_fund(e, "大单净流入-净额", ["5日", "10日", "1月", "3月", "6月", "1年"], [datas_5d, datas_10d, datas_1m, datas_3m, datas_6m, datas_1y])
         set_fund(e, "中单净流入-净额", ["5日", "10日", "1月", "3月", "6月", "1年"], [datas_5d, datas_10d, datas_1m, datas_3m, datas_6m, datas_1y])
         set_fund(e, "小单净流入-净额", ["5日", "10日", "1月", "3月", "6月", "1年"], [datas_5d, datas_10d, datas_1m, datas_3m, datas_6m, datas_1y])
+        Logger().info(f"[{i}/{len(l)}] collecting {e}")
 
     write_xlsx(l, file)
 
