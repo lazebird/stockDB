@@ -76,5 +76,5 @@ if __name__ == "__main__":
     (number, date, long, interval, force, more) = arg_parse()
     date = datetime.datetime.strptime(date, DefDateFmt).date()
     tradedate = TradeDate()
-    more and his_more(tradedate, max=number, interval=interval, force=force)
+    more and his_more(tradedate, end_date=date, max=number, interval=interval, force=force)
     more or his_update(tradedate, end_date=date, days=long, max=number, interval=interval, force=force)
