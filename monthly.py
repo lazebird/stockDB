@@ -24,7 +24,7 @@ def stocklist_update(l: list, nl: list, file, max, date, today, interval, force=
         StockList.update_stock(l, o)
         Logger().info(f"[{i+1}/{max}] updating {o}")
         (i & 31 == 31) and write_data(l, file)  # incremental file save for a long period oper
-        time.sleep(interval)  # reduce speed to avoid server block
+        interval > 0 and time.sleep(interval)  # reduce speed to avoid server block
     write_data(l, file)
 
 

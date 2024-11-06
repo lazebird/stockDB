@@ -22,7 +22,7 @@ def stock_update(tradedate: TradeDate, l: list, interval, start_date: datetime.d
             Logger().err(f"stock {s.code} {s.name} skipped, cause: not trade in {start_date}")
             continue
         datas = s.get_daily(start_date=start_date, end_date=end_date)
-        time.sleep(interval)  # reduce speed to avoid server block
+        interval > 0 and time.sleep(interval)  # reduce speed to avoid server block
         for d in datas:
             file = "{}/{}.txt".format(d.get("日期", "1970/01/01").replace("/", ""), s.code)
             if not force and load_data(file, {}) != {}:
