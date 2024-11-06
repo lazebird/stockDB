@@ -20,7 +20,7 @@ def stocklist_update(l: list, nl: list, file, max, date, today, interval, force=
             if not force and lastdate + datetime.timedelta(days=30) > today:
                 Logger().info(f"[{i+1}/{max}] stock {e['code']} {e['name']} skipped, cause: less than 30 days passed from last update {lastdate}")
                 continue
-        o = Stock(e["code"], e["name"], e["market"], e["rdate"]).get_monthly(date)
+        o = Stock(e["code"], e["name"], e["market"], e["rdate"]).get_monthly(date)[0]
         StockList.update_stock(l, o)
         Logger().info(f"[{i+1}/{max}] updating {o}")
         (i & 31 == 31) and write_data(l, file)  # incremental file save for a long period oper

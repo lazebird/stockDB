@@ -14,38 +14,37 @@ from log import Logger
 from tradedate import TradeDate
 
 
-def stock_update(tradedate: TradeDate, l: list, interval, date: datetime.date, force=False):
+def stock_update(tradedate: TradeDate, l: list, interval, start_date: datetime.date, end_date: datetime.date, force=False):
     max = len(l)
     for i, e in enumerate(l):
         s = Stock(e["code"], e["name"], e["market"], e["rdate"])
-        if not tradedate.stock_check(s, date):
-            Logger().err(f"stock {s.code} {s.name} skipped, cause: not trade in {date}")
+        if not tradedate.stock_check(s, start_date):
+            Logger().err(f"stock {s.code} {s.name} skipped, cause: not trade in {start_date}")
             continue
-        file = "{}/{}.txt".format(date.strftime("%Y%m%d"), s.code)
-        if not force and load_data(file, {}) != {}:
-            Logger().info(f"[{i+1}/{max}] stock {s.code} {s.name} {date} skipped, cause: {file} already exists")
-            continue
-        o = s.get_daily(start_date=date, end_date=date)
+        datas = s.get_daily(start_date=start_date, end_date=end_date)
         time.sleep(interval)  # reduce speed to avoid server block
-        write_data(o, file)
-        Logger().info(f"[{i+1}/{max}] updating {o}")
+        for d in datas:
+            file = "{}/{}.txt".format(d.get("日期", "1970/01/01").replace("/", ""), s.code)
+            if not force and load_data(file, {}) != {}:
+                Logger().info(f"[{i+1}/{max}] stock {s.code} {s.name} skipped, cause: {file} already exists")
+                continue
+            write_data(d, file)
+            Logger().info(f"[{i+1}/{max}] updating file {file}, data {d}")
 
 
-def daily_update(tradedate: TradeDate, date: datetime.date = None, max=-1, interval=DefInterval, force=False):
-    date = datetime.date.today() if date == None else date
-    if not tradedate.date_check(date):
+def daily_update(tradedate: TradeDate, start_date: datetime.date, end_date: datetime.date, max=-1, interval=DefInterval, force=False):
+    start_date = datetime.date.today() if start_date == None else start_date
+    end_date = datetime.date.today() if end_date == None else end_date
+    if not tradedate.date_check(start_date):
         return False
     l = StockList()
-    stock_update(tradedate, l.shlist[:max], interval, date, force=force)
-    stock_update(tradedate, l.szlist[:max], interval, date, force=force)
-    stock_update(tradedate, l.bjlist[:max], interval, date, force=force)
+    stock_update(tradedate, l.shlist[:max] + l.szlist[:max] + l.bjlist[:max], interval, start_date=start_date, end_date=end_date, force=force)
     return True
 
 
 def his_update(tradedate, end_date=datetime.date.today(), days=30, max=-1, interval=DefInterval, force=False):
-    for i in range(days):
-        date = end_date - datetime.timedelta(days=i)
-        daily_update(tradedate, date=date, max=max, interval=interval, force=force)
+    date = end_date - datetime.timedelta(days=days)
+    daily_update(tradedate, start_date=date, end_date=end_date, max=max, interval=interval, force=force)
 
 
 def his_more(tradedate: TradeDate, end_date=datetime.date.today(), max=-1, interval=DefInterval, force=False):
@@ -54,7 +53,7 @@ def his_more(tradedate: TradeDate, end_date=datetime.date.today(), max=-1, inter
         dir = get_datadir(date.strftime("%Y%m%d"))
         if os.path.isdir(dir) or not tradedate.date_check(date):
             continue
-        daily_update(tradedate, date=date, max=max, interval=interval, force=force)
+        daily_update(tradedate, start_date=date - datetime.timedelta(days=30), end_date=date, max=max, interval=interval, force=force)
         break
 
 
@@ -62,7 +61,7 @@ def arg_parse():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--date", default=datetime.date.today().strftime(DefDateFmt), help="end date")
     parser.add_argument("-n", "--number", type=int, default=-1, help="stock number")
-    parser.add_argument("-l", "--long", type=int, default=1, help="days for history data")
+    parser.add_argument("-l", "--long", type=int, default=30, help="days for history data")
     parser.add_argument("-i", "--interval", type=int, default=DefInterval, help="API call interval")
     parser.add_argument("-f", "--force", action="store_true", help="force to update, even if exists")
     parser.add_argument("-m", "--more", action="store_true", help="one more days's daily data, not exists now, not older than 365 days ago")

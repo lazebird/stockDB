@@ -3,6 +3,7 @@ import sys
 
 sys.dont_write_bytecode = True
 import datetime
+import json
 import os
 import argparse
 from fs import load_data, write_xlsx, write_data, DataDir
@@ -124,9 +125,21 @@ def stock_xlsx(name, force=False):
         write_xlsx(datas, file)
 
 
+def data_check(force=False):
+    for d in os.scandir(DataDir):
+        if d.is_file():
+            continue
+        for f in os.scandir(d.path):
+            with open(f.path, "r", encoding="utf8") as fp:
+                o: dict[str, str] = json.load(fp)
+                if o.get("日期", "").replace("/", "") != d.name:
+                    Logger().err(f"file {f.path} data check error(remove={force})")
+                    force and os.remove(f.path)
+
+
 def arg_parse():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-m", "--mode", default="xlsx", help="split, stat, xlsx(default)")
+    parser.add_argument("-m", "--mode", default="xlsx", help="split, stat, xlsx(default), check")
     parser.add_argument("-p", "--pe", type=int, default=50, help="pe value, used in stat mode")
     parser.add_argument("-t", "--pe_ttm", type=int, default=50, help="pe_ttm value, used in stat mode")
     parser.add_argument(
@@ -154,3 +167,5 @@ if __name__ == "__main__":
             stock_stat(pe, pe_ttm)
         case "xls" | "xlsx":
             stock_x_xlsx(force) if names == None else list(filter(lambda n: stock_xlsx(n, force), names))
+        case "check":
+            data_check(force=force)
