@@ -33,17 +33,6 @@ def stock_stat(pe, pe_ttm):
     Logger().info(f"bjlist: {len(l.bjlist)}, pe<{pe}, pe_ttm<{pe_ttm}: {len(list(filter(lambda x:x['pe_ttm']<pe_ttm and x['pe']<pe, l.bjlist)))}")
 
 
-def stocklist_xlsx(force):
-    file = "output/列表.xlsx"
-    if not force and os.path.isfile(file):
-        Logger().info(f"{file} write skipped, cause: already exists")
-        return
-    l = StockList()
-    l = l.shlist + l.szlist + l.bjlist
-    l.sort(key=lambda x: x["code"])
-    write_xlsx(l, file)
-
-
 def load_hisdirs():
     return list(map(lambda x: x.name, filter(lambda e: e.is_dir(), os.scandir(DataDir))))
 

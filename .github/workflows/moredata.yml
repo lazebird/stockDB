@@ -1,8 +1,8 @@
 name: more_history_data # manual grab more history data
 
 on:
-  # schedule:
-  #   - cron: "20 21 * * *" # UTC时间的21:20，相当于北京时间的5:20
+  schedule:
+    - cron: "20 21 * * *" # UTC时间的21:20，相当于北京时间的5:20
   workflow_dispatch:
 
 jobs:

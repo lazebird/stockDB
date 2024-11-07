@@ -4,6 +4,8 @@ import sys
 sys.dont_write_bytecode = True
 import akshare as ak
 from fs import load_data
+import datetime
+from env import DefRDateFmt
 
 
 class StockList:
@@ -17,7 +19,7 @@ class StockList:
         return list(map(lambda d: {"code": d[0], "name": d[1], "market": "sh", "rdate": d[3]}, ak.stock_info_sh_name_code(symbol="主板A股").values))
 
     def get_szlist():
-        return list(map(lambda d: {"code": d[1], "name": d[2], "market": "sz", "rdate": d[3]}, ak.stock_info_sz_name_code(symbol="A股列表").values))
+        return list(map(lambda d: {"code": d[1], "name": d[2], "market": "sz", "rdate": datetime.datetime.strptime(d[3], DefRDateFmt).date()}, ak.stock_info_sz_name_code(symbol="A股列表").values))
 
     def get_bjlist():
         return list(map(lambda d: {"code": d[0], "name": d[1], "market": "bj", "rdate": d[4]}, ak.stock_info_bj_name_code().values))
@@ -34,7 +36,10 @@ class StockList:
 
 
 if __name__ == "__main__":
-    s = StockList()
-    print(s.shlist[:4])
-    print(s.szlist[:4])
-    print(s.bjlist[:4])
+    # s = StockList()
+    # print(s.shlist[:4])
+    # print(s.szlist[:4])
+    # print(s.bjlist[:4])
+    print(ak.stock_info_sh_name_code(symbol="主板A股"))
+    print(ak.stock_info_sz_name_code(symbol="A股列表"))
+    print(ak.stock_info_bj_name_code())

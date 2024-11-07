@@ -30,7 +30,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Python script
-        run: python monthly.py
+        run: python monthly.py -f
 
       - name: compress and clean data directory
         run: python clean.py
