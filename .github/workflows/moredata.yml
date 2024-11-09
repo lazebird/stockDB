@@ -41,7 +41,7 @@ jobs:
           git config --global user.email 'actions@github.com'
           git add data/
           if [ -n "$(git status --porcelain)" ]; then
-            git commit -m "Update data files"
+            git commit -m "more data files"
             git pull --rebase
             git push
           else
