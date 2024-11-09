@@ -114,16 +114,30 @@ def stock_xlsx(name, force=False):
         write_xlsx(datas, file)
 
 
-def data_check(force=False):
-    for d in os.scandir(DataDir):
-        if d.is_file():
-            continue
+def data_check(start_date, end_date, days, force_remove=False):
+    all_dirs: list[os.DirEntry[str]] = list(filter(lambda d: d.is_dir(), os.scandir(DataDir)))
+    valid_dirs: list[os.DirEntry[str]] = []
+    if start_date != None or end_date != None:
+        valid_dirs = list(filter(lambda d: (start_date == None or d.name >= start_date) and (end_date == None or d.name <= end_date), all_dirs))
+    else:
+        lastdate = datetime.date.today() - datetime.timedelta(days=days)
+        valid_dirs = list(filter(lambda d: datetime.datetime.fromtimestamp(os.path.getmtime(d.path)).date() > lastdate, all_dirs))
+    invalid_dirs = list(map(lambda d: d.name, set(all_dirs).difference(valid_dirs)))
+    invalid_dirs.sort()
+    Logger().info(f"start_date {start_date}, end_date {end_date}, valid_dirs: {invalid_dirs}")
+    for d in valid_dirs:
+        fcnt = 0
         for f in os.scandir(d.path):
+            fcnt = fcnt + 1
             with open(f.path, "r", encoding="utf8") as fp:
                 o: dict[str, str] = json.load(fp)
                 if o.get("日期", "").replace("/", "") != d.name:
-                    Logger().err(f"file {f.path} data check error(remove={force})")
-                    force and os.remove(f.path)
+                    Logger().err(f"file {f.path} data check error(remove={force_remove})")
+                    force_remove and os.remove(f.path)
+                    fcnt = fcnt - 1
+        if fcnt == 0:
+            Logger().err(f"dir {d.path} is empty(remove={force_remove})")
+            force_remove and os.rmdir(d.path)
 
 
 def arg_parse():
@@ -141,14 +155,17 @@ def arg_parse():
             'python tools.py -m xlsx' will get a list include all stocks""",
     )
     parser.add_argument("-f", "--force", action="store_true", help="force to update, even if exists")
+    parser.add_argument("-s", "--start", help="start date, format %Y%m%d, used in check mode")
+    parser.add_argument("-e", "--end", help="end date, format %Y%m%d, used in check mode")
+    parser.add_argument("-d", "--days", type=int, default=1, help="how long days from today to check, default 1d, won't take effect if start/end date set, used in check mode")
     args = parser.parse_args()
     Logger().info(f"args: {args}")
-    return (args.mode, args.pe, args.pe_ttm, args.names, args.force)
+    return (args.mode, args.pe, args.pe_ttm, args.names, args.force, args.start, args.end, args.days)
 
 
 if __name__ == "__main__":
     Logger().set_level(7).clear()
-    (mode, pe, pe_ttm, names, force) = arg_parse()
+    (mode, pe, pe_ttm, names, force, start, end, days) = arg_parse()
     match mode:
         case "split":
             split_stocklist()
@@ -157,4 +174,4 @@ if __name__ == "__main__":
         case "xls" | "xlsx":
             stock_x_xlsx(force) if names == None else list(filter(lambda n: stock_xlsx(n, force), names))
         case "check":
-            data_check(force=force)
+            data_check(start, end, days, force)
